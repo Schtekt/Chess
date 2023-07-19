@@ -27,7 +27,8 @@ const uint8_t BOARDLENGTH = 8;
 enum PieceColor
 {
     WHITE,
-    BLACK
+    BLACK,
+    NUM_COLORS
 };
 
 struct PiecePos
@@ -58,6 +59,7 @@ public:
     virtual const char PieceNotation() = 0;
     PiecePos GetPosition() { return m_pos; }
     PieceColor GetColor() { return m_color; }
+    void SetPos(uint8_t x, uint8_t y) { m_pos.x = x; m_pos.y = y; }
 protected:
     PiecePos m_pos;
     PieceColor m_color;
