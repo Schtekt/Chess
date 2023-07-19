@@ -36,6 +36,11 @@ struct PiecePos
     uint8_t x;
     uint8_t y;
 
+    bool operator==(const PiecePos& other) const
+    {
+        return x == other.x && y == other.y;
+    }
+
     std::string chessPos() 
     {
         std::ostringstream out;
@@ -50,6 +55,10 @@ public:
     BasePiece(uint8_t x, uint8_t y, PieceColor color): m_pos(x,y), m_color(color) {};
 
     virtual std::vector<PiecePos> PossibleMoves(std::vector<BasePiece*> piecesOnBoard) = 0;
+    virtual const char PieceNotation() = 0;
+    PiecePos GetPosition() { return m_pos; }
+    PieceColor GetColor() { return m_color; }
+protected:
     PiecePos m_pos;
     PieceColor m_color;
 };
@@ -59,7 +68,7 @@ class King : public BasePiece
 public:
     King(uint8_t x, uint8_t y, PieceColor color): BasePiece(x,y,color){};
     virtual std::vector<PiecePos> PossibleMoves(std::vector<BasePiece*> piecesOnBoard);
-private:
+    virtual const char PieceNotation() {return 'K';}
 };
 
 class Queen : public BasePiece
@@ -67,7 +76,7 @@ class Queen : public BasePiece
 public:
     Queen(uint8_t x, uint8_t y, PieceColor color): BasePiece(x,y,color){};
     virtual std::vector<PiecePos> PossibleMoves(std::vector<BasePiece*> piecesOnBoard);
-private:
+    virtual const char PieceNotation() { return 'Q';}
 };
 
 class Bishop : public BasePiece
@@ -75,7 +84,7 @@ class Bishop : public BasePiece
 public:
     Bishop(uint8_t x, uint8_t y, PieceColor color): BasePiece(x,y,color){};
     virtual std::vector<PiecePos> PossibleMoves(std::vector<BasePiece*> piecesOnBoard);
-private:
+    virtual const char PieceNotation() { return 'B';}
 };
 
 class Knight : public BasePiece
@@ -83,7 +92,7 @@ class Knight : public BasePiece
 public:
     Knight(uint8_t x, uint8_t y, PieceColor color): BasePiece(x,y,color){};
     virtual std::vector<PiecePos> PossibleMoves(std::vector<BasePiece*> piecesOnBoard);
-private:
+    virtual const char PieceNotation() { return 'N';}
 };
 
 class Rook : public BasePiece
@@ -91,7 +100,7 @@ class Rook : public BasePiece
 public:
     Rook(uint8_t x, uint8_t y, PieceColor color): BasePiece(x,y,color){};
     virtual std::vector<PiecePos> PossibleMoves(std::vector<BasePiece*> piecesOnBoard);
-private:
+    virtual const char PieceNotation() { return 'R';}
 };
 
 class Pawn : public BasePiece
@@ -99,5 +108,5 @@ class Pawn : public BasePiece
 public:
     Pawn(uint8_t x, uint8_t y, PieceColor color): BasePiece(x,y,color){};
     virtual std::vector<PiecePos> PossibleMoves(std::vector<BasePiece*> piecesOnBoard);
-private:
+    virtual const char PieceNotation() { return 'p';}
 };

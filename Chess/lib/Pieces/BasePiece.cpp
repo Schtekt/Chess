@@ -62,7 +62,7 @@ std::vector<PiecePos> King::PossibleMoves(std::vector<BasePiece *> piecesOnBoard
             {
                 continue;
             }
-            else if(move.x == piece->m_pos.x && move.y == piece->m_pos.y)
+            else if(piece->GetPosition() == move)
             {
                 removeMove[counter] = true;
                 break;
@@ -101,33 +101,35 @@ std::vector<PiecePos> Queen::PossibleMoves(std::vector<BasePiece*> piecesOnBoard
             continue;
         }
 
-        bool mayNotCapture = m_color == piece->m_color;
+        bool mayNotCapture = m_color == piece->GetColor();
 
-        if(piece->m_pos.x == m_pos.x)
+        PiecePos otherPiecePos = piece->GetPosition();
+
+        if(otherPiecePos.x == m_pos.x)
         {
-            if(piece->m_pos.y < m_pos.y && m_pos.y - piece->m_pos.y < maxMovesDown)
+            if(otherPiecePos.y < m_pos.y && m_pos.y - otherPiecePos.y < maxMovesDown)
             {
-                maxMovesDown = m_pos.y - piece->m_pos.y - 1 * mayNotCapture;
+                maxMovesDown = m_pos.y - otherPiecePos.y - 1 * mayNotCapture;
             }
-            if(piece->m_pos.y > m_pos.y && piece->m_pos.y - m_pos.y < maxMovesUp)
+            if(otherPiecePos.y > m_pos.y && otherPiecePos.y - m_pos.y < maxMovesUp)
             {
-                maxMovesUp = piece->m_pos.y - m_pos.y - 1 * mayNotCapture;
+                maxMovesUp = otherPiecePos.y - m_pos.y - 1 * mayNotCapture;
             }
         }
-        else if(piece->m_pos.y == m_pos.y)
+        else if(otherPiecePos.y == m_pos.y)
         {
-            if(piece->m_pos.x < m_pos.x && m_pos.x - piece->m_pos.x < maxMovesLeft)
+            if(otherPiecePos.x < m_pos.x && m_pos.x - otherPiecePos.x < maxMovesLeft)
             {
-                maxMovesLeft = m_pos.x - piece->m_pos.x - 1 * mayNotCapture;
+                maxMovesLeft = m_pos.x - otherPiecePos.x - 1 * mayNotCapture;
             }
-            if(piece->m_pos.x > m_pos.x && piece->m_pos.x - m_pos.x < maxMovesRight)
+            if(otherPiecePos.x > m_pos.x && otherPiecePos.x - m_pos.x < maxMovesRight)
             {
-                maxMovesRight = piece->m_pos.x - m_pos.x - 1 * mayNotCapture;
+                maxMovesRight = otherPiecePos.x - m_pos.x - 1 * mayNotCapture;
             }
         }
 
-        int8_t deltaRow = piece->m_pos.x - m_pos.x;
-        int8_t deltaCol = piece->m_pos.y - m_pos.y;
+        int8_t deltaRow = otherPiecePos.x - m_pos.x;
+        int8_t deltaCol = otherPiecePos.y - m_pos.y;
         uint8_t absDeltaRow = abs(deltaRow);
         uint8_t absDeltaCol = abs(deltaCol);
 
@@ -218,15 +220,15 @@ std::vector<PiecePos> Bishop::PossibleMoves(std::vector<BasePiece*> piecesOnBoar
             continue;
         }
 
-        int8_t deltaRow = piece->m_pos.x - m_pos.x;
-        int8_t deltaCol = piece->m_pos.y - m_pos.y;
+        int8_t deltaRow = piece->GetPosition().x - m_pos.x;
+        int8_t deltaCol = piece->GetPosition().y - m_pos.y;
         uint8_t absDeltaRow = abs(deltaRow);
         uint8_t absDeltaCol = abs(deltaCol);
         
         // Is on one of the diagonals...
         if(absDeltaRow == absDeltaCol)
         {
-            bool mayNotCapture = m_color == piece->m_color;
+            bool mayNotCapture = m_color == piece->GetColor();
             uint8_t distance = std::min(absDeltaRow, absDeltaCol) - 1 * mayNotCapture;
             // Piece is on upper left side diagonal of this queen
             if(deltaRow < 0 && deltaCol > 0 && maxMovesUpLeft > distance)
@@ -327,7 +329,7 @@ std::vector<PiecePos> Knight::PossibleMoves(std::vector<BasePiece*> piecesOnBoar
                 continue;
             }
 
-            if(piece->m_pos.x == move.x && piece->m_pos.y == move.y && piece->m_color == m_color)
+            if(piece->GetPosition() == move && piece->GetColor() == m_color)
             {
                 removeMove[counter] = true;
                 break;
@@ -361,28 +363,28 @@ std::vector<PiecePos> Rook::PossibleMoves(std::vector<BasePiece*> piecesOnBoard)
         {
             continue;
         }
-        bool mayNotCapture = m_color == piece->m_color;
-
-        if(piece->m_pos.x == m_pos.x)
+        bool mayNotCapture = m_color == piece->GetColor();
+        PiecePos otherPiecePos = piece->GetPosition();
+        if(otherPiecePos.x == m_pos.x)
         {
-            if(piece->m_pos.y < m_pos.y && m_pos.y - piece->m_pos.y < maxMovesDown)
+            if(otherPiecePos.y < m_pos.y && m_pos.y - otherPiecePos.y < maxMovesDown)
             {
-                maxMovesDown = m_pos.y - piece->m_pos.y - 1 * mayNotCapture;
+                maxMovesDown = m_pos.y - otherPiecePos.y - 1 * mayNotCapture;
             }
-            if(piece->m_pos.y > m_pos.y && piece->m_pos.y - m_pos.y < maxMovesUp)
+            if(otherPiecePos.y > m_pos.y && otherPiecePos.y - m_pos.y < maxMovesUp)
             {
-                maxMovesUp = piece->m_pos.y - m_pos.y - 1 * mayNotCapture;
+                maxMovesUp = otherPiecePos.y - m_pos.y - 1 * mayNotCapture;
             }
         }
-        else if(piece->m_pos.y == m_pos.y)
+        else if(otherPiecePos.y == m_pos.y)
         {
-            if(piece->m_pos.x < m_pos.x && m_pos.x - piece->m_pos.x < maxMovesLeft)
+            if(otherPiecePos.x < m_pos.x && m_pos.x - otherPiecePos.x < maxMovesLeft)
             {
-                maxMovesLeft = m_pos.x - piece->m_pos.x - 1 * mayNotCapture;
+                maxMovesLeft = m_pos.x - otherPiecePos.x - 1 * mayNotCapture;
             }
-            if(piece->m_pos.x > m_pos.x && piece->m_pos.x - m_pos.x < maxMovesRight)
+            if(otherPiecePos.x > m_pos.x && otherPiecePos.x - m_pos.x < maxMovesRight)
             {
-                maxMovesRight = piece->m_pos.x - m_pos.x - 1 * mayNotCapture;
+                maxMovesRight = otherPiecePos.x - m_pos.x - 1 * mayNotCapture;
             }
         }
     }
@@ -419,17 +421,19 @@ std::vector<PiecePos> Pawn::PossibleMoves(std::vector<BasePiece*> piecesOnBoard)
 
     bool mayMove = forwardPos < BOARDLENGTH && forwardPos >= 0;
     bool mayMoveDouble = (m_pos.y == 1 && m_color == PieceColor::WHITE) || (m_pos.y == BOARDLENGTH - 2 && m_color == PieceColor::BLACK);
+
     for (auto piece : piecesOnBoard)
     {
-        if (piece->m_pos.y == forwardPos && abs(piece->m_pos.x - m_pos.x) == 1 && piece->m_color != m_color)
+        PiecePos otherPiecePos = piece->GetPosition();
+        if (otherPiecePos.y == forwardPos && abs(otherPiecePos.x - m_pos.x) == 1 && piece->GetColor() != m_color)
         {
-            movablePositions.emplace_back(piece->m_pos.x, piece->m_pos.y);
+            movablePositions.emplace_back(otherPiecePos.x, otherPiecePos.y);
         }
-        else if (piece->m_pos.y == doubleForwardPos && piece->m_pos.x == m_pos.x)
+        else if (otherPiecePos.y == doubleForwardPos && otherPiecePos.x == m_pos.x)
         {
             mayMoveDouble = false;
         }
-        else if(piece->m_pos.y == forwardPos && piece->m_pos.x == m_pos.x)
+        else if(otherPiecePos.y == forwardPos && otherPiecePos.x == m_pos.x)
         {
             mayMove = false;
             mayMoveDouble = false;
