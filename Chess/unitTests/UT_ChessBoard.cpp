@@ -36,6 +36,24 @@ TEST(CHESSBOARD, MoveRook)
     ASSERT_EQ(board.GetNrOfPossibleMoves('A', 1), 14);
 }
 
+TEST(CHESSBOARD, MoveRookIllegal)
+{
+    ChessBoard board(false);
+    board.AddPiece('A', 1, ChessPieceColor::BLACK | ChessPieceType::ROOK);
+
+    ASSERT_FALSE(board.MakeMove('A', 1, 'B', 2));
+}
+
+TEST(CHESSBOARD, RookMayNotOpenForCheck)
+{
+    ChessBoard board(false);
+    board.AddPiece('A', 1, ChessPieceColor::BLACK | ChessPieceType::KING);
+    board.AddPiece('A', 2, ChessPieceColor::BLACK | ChessPieceType::ROOK);
+    board.AddPiece('A', 7, ChessPieceColor::WHITE | ChessPieceType::ROOK);
+
+    ASSERT_FALSE(board.MakeMove('A', 2, 'B', 2));
+    ASSERT_TRUE(board.MakeMove('A', 2, 'A', 3));
+}
 
 TEST(CHESSBOARD, TurnChange)
 {

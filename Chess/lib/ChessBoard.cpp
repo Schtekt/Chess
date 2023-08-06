@@ -32,12 +32,12 @@ uint8_t ChessBoard::GetNrOfPossibleMoves(uint8_t x, uint8_t y) const
 
 std::array<bool, 64> ChessBoard::GetPossibleMoves(uint8_t x, uint8_t y) const
 {
-    return getPossibleMoves(m_boardData, x, y);
+    size_t pieceIndex = convertChessCoordinateToIndex(x,y);
+    return getPossibleMoves(m_boardData, pieceIndex);
 }
 
-std::array<bool, 64> ChessBoard::getPossibleMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y, bool checkForCheck) const
+std::array<bool, 64> ChessBoard::getPossibleMoves(const std::array<uint8_t, 64>& board, size_t pieceIndex, bool checkForCheck) const
 {
-    size_t pieceIndex = convertChessCoordinateToIndex(x, y);
     ChessPiece piece(board[pieceIndex]);
     ChessPieceType pieceType = piece.GetType();
     ChessPieceColor pieceColor = piece.GetColor();
@@ -46,24 +46,24 @@ std::array<bool, 64> ChessBoard::getPossibleMoves(const std::array<uint8_t, 64>&
         return {0};
     }
 
-    std::array<bool, 64> possibleMoves = getSpecificPiecePossibleMoves(board, pieceType, x, y);
+    // For easier human calcs, the x and y coordinates are used in the specific piece calculations.
+    auto coordinate = convertIndexToChessCoordinate(pieceIndex);
+    std::array<bool, 64> possibleMoves = getSpecificPiecePossibleMoves(board, pieceType, std::get<0>(coordinate), std::get<1>(coordinate));
+    
+    // Pieces may not move so that they place their color into check, as this would result in an instant loss.
     if(checkForCheck)
     {
-        for(uint8_t y = 1; y <= 8; y++)
+        for(size_t i = 0; i < possibleMoves.size(); i++)
         {
-            for(uint8_t x = 'A'; x <= 'H'; x++)
+            if(possibleMoves[i])
             {
-                size_t possibleMoveIndex = convertChessCoordinateToIndex(x,y);
-                if(possibleMoves[possibleMoveIndex])
-                {
-                    std::array<uint8_t, 64> possibleBoard = m_boardData;
-                    possibleBoard[pieceIndex] = 0;
-                    possibleBoard[possibleMoveIndex] = piece.GetFlag();
+                std::array<uint8_t, 64> possibleBoard = m_boardData;
+                possibleBoard[pieceIndex] = 0;
+                possibleBoard[i] = piece.GetFlag();
 
-                    if(colorInCheck(pieceColor, possibleBoard))
-                    {
-                        possibleMoves[possibleMoveIndex] = false;
-                    }
+                if(colorInCheck(pieceColor, possibleBoard))
+                {
+                    possibleMoves[i] = false;
                 }
             }
         }
@@ -154,6 +154,11 @@ size_t ChessBoard::convertChessCoordinateToIndex(uint8_t x, uint8_t y) const
     return x - 'A' + 8 * (y - 1);
 }
 
+std::tuple<uint8_t, uint8_t> ChessBoard::convertIndexToChessCoordinate(size_t index) const
+{
+    return std::make_tuple<uint8_t, uint8_t>(static_cast<uint8_t>(index % 8 + 'A'), static_cast<uint8_t>(index / 8 + 1));
+}
+
 bool ChessBoard::spotIsEligible(uint8_t sourceFlag, uint8_t targetFlag) const
 {
     return targetFlag == ChessPieceType::NONE || 
@@ -166,17 +171,18 @@ bool ChessBoard::colorInCheck(ChessPieceColor color, std::array<uint8_t, 64> boa
     uint8_t king_x = 0;
     uint8_t king_y = 0;
 
-    for(uint8_t x = 'A'; x <= 'H'; x++)
+
+    for(size_t i = 0; i < boardData.size(); i++)
     {
-        for(uint8_t y = 1; y <= 8; y++)
+
+        ChessPiece piece(boardData[i]);
+        if(piece.GetColor() == color && piece.GetType() == ChessPieceType::KING)
         {
-            size_t boardPosIndex = convertChessCoordinateToIndex(x, y);
-            if((boardData[boardPosIndex] & ChessPieceColor::BLACK) == (color & ChessPieceColor::BLACK)
-                && (boardData[boardPosIndex] & ChessPieceType::KING))
-            {
-                king_x = x;
-                king_y = y;
-            }
+            auto res = convertIndexToChessCoordinate(i);
+            king_x = std::get<0>(res);
+            king_y = std::get<1>(res);
+            // No need to check for multiple kings
+            break;
         }
     }
 
@@ -186,26 +192,23 @@ bool ChessBoard::colorInCheck(ChessPieceColor color, std::array<uint8_t, 64> boa
         return false;
     }
 
-    for(uint8_t x = 'A'; x <= 'H'; x++)
+    for(uint8_t i = 0; i < boardData.size(); i++)
     {
-        for(uint8_t y = 1; y <= 8; y++)
+        ChessPiece piece(boardData[i]);
+        if(piece.GetType() == ChessPieceType::NONE)
         {
-            size_t boardPosIndex = convertChessCoordinateToIndex(x, y);
-            if(boardData[boardPosIndex] == ChessPieceType::NONE)
-            {
-                continue;
-            }
+            continue;
+        }
 
-            if((boardData[boardPosIndex] & ChessPieceColor::BLACK) == (color & ChessPieceColor::BLACK))
-            {
-                continue;
-            }
+        if(piece.GetColor() == color)
+        {
+            continue;
+        }
 
-            auto possibleMoves = getPossibleMoves(boardData, x, y, false);
-            if(possibleMoves[convertChessCoordinateToIndex(king_x, king_y)])
-            {
-                return true;
-            }
+        auto possibleMoves = getPossibleMoves(boardData, i, false);
+        if(possibleMoves[convertChessCoordinateToIndex(king_x, king_y)])
+        {
+            return true;
         }
     }
 
@@ -222,6 +225,7 @@ std::array<bool, 64> ChessBoard::getSpecificPiecePossibleMoves(const std::array<
         break;
     case ChessPieceType::ROOK:
         possibleMoves = getPossibleRookMoves(board, x, y);
+        break;
     default:
         // do nothing
         break;
@@ -232,9 +236,8 @@ std::array<bool, 64> ChessBoard::getSpecificPiecePossibleMoves(const std::array<
 std::array<bool, 64> ChessBoard::getPossibleKingMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const
 {
     // King is allowed to move one step in any direction, so long as it remains on the board.
-    // If a friendly piece occupies an eligible position, the king may not move there.
-    // If a hostile piece occupies an eligible position, the king may capture it.
-    // The king must not move into check
+    // If a friendly piece occupies an eligible position, the King may not move there.
+    // If a hostile piece occupies an eligible position, the King may capture it.
 
     std::array<bool, 64> possibleMoves = {0};
     size_t currentIndex = convertChessCoordinateToIndex(x, y);
@@ -315,6 +318,10 @@ std::array<bool, 64> ChessBoard::getPossibleKingMoves(const std::array<uint8_t, 
 
 std::array<bool, 64> ChessBoard::getPossibleRookMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const
 {
+    // Rook is allowed to move any number of steps horizontally or vertically.
+    // If a friendly piece occupies an eligible position, the Rook may not move there, or past it.
+    // If a hostile piece occupies an eligible position, the Rook may capture it, but not move past it.
+
     std::array<bool, 64> possibleMoves = {0};
     size_t currentIndex = convertChessCoordinateToIndex(x, y);
     uint8_t sourceFlag = board[currentIndex];
