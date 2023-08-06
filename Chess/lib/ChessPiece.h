@@ -20,33 +20,15 @@ enum ChessPieceType
     PAWN = 6,
 };
 
-struct ChessPiecePos
-{
-    ChessPiecePos(uint8_t x, uint8_t y): x(x), y(y) {};
-    uint8_t x;
-    uint8_t y;
-
-    bool operator==(const ChessPiecePos& other) const
-    {
-        return x == other.x && y == other.y;
-    }
-
-    std::string chessPos() 
-    {
-        std::ostringstream out;
-        out << (uint8_t)('A' + x) << ", " << (uint32_t)y;
-        return out.str();
-    }
-};
-
 class ChessPiece
 {
 public:
-    ChessPiece(unsigned int flag, ChessPiecePos pos);
+    ChessPiece(uint8_t flag);
 
-    bool IsWhite();
-    char GetNotation();
+    ChessPieceColor GetColor() const;
+    ChessPieceType GetType() const;
+    char GetNotation() const;
+    uint8_t GetFlag() const;
 private:
-    unsigned int m_infoFlag;
-    ChessPiecePos m_pos;
+    uint8_t m_infoFlag;
 };

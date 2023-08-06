@@ -1,17 +1,21 @@
 #include "ChessPiece.h"
 
-ChessPiece::ChessPiece(unsigned int flag, ChessPiecePos pos): m_infoFlag(flag), m_pos(pos)
+ChessPiece::ChessPiece(uint8_t flag): m_infoFlag(flag)
 {
 
 }
 
-bool ChessPiece::IsWhite()
+ChessPieceColor ChessPiece::GetColor() const
 {
-    return !(m_infoFlag & ChessPieceColor::BLACK);
+    return static_cast<ChessPieceColor>(m_infoFlag & ChessPieceColor::BLACK);
 }
 
+ChessPieceType ChessPiece::GetType() const
+{
+    return static_cast<ChessPieceType>(m_infoFlag & ~ChessPieceColor::BLACK);
+}
 
-char ChessPiece::GetNotation()
+char ChessPiece::GetNotation() const
 {
     ChessPieceType type = static_cast<ChessPieceType>(m_infoFlag & ~ChessPieceColor::BLACK);
 
@@ -38,4 +42,9 @@ char ChessPiece::GetNotation()
         default:
             return ' ';
     }
+}
+
+uint8_t ChessPiece::GetFlag() const
+{
+    return m_infoFlag;
 }
