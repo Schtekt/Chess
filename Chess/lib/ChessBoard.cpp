@@ -226,6 +226,9 @@ std::array<bool, 64> ChessBoard::getSpecificPiecePossibleMoves(const std::array<
     case ChessPieceType::ROOK:
         possibleMoves = getPossibleRookMoves(board, x, y);
         break;
+    case ChessPieceType::BISHOP:
+        possibleMoves = getPossibleBishopMoves(board, x, y);
+        break;
     default:
         // do nothing
         break;
@@ -381,6 +384,78 @@ std::array<bool, 64> ChessBoard::getPossibleRookMoves(const std::array<uint8_t, 
     for(uint8_t targetX = x - 1; targetX >= 'A'; targetX--)
     {
         if(!spotIsNotOccupied(targetX, y))
+        {
+            break;
+        }
+    }
+
+    return possibleMoves;
+}
+
+std::array<bool, 64> ChessBoard::getPossibleBishopMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const
+{
+    // Bishop is allowed to move any number of steps in any diagonal direction.
+    // If a friendly piece occupies an eligible position, the Bishop may not move there, or past it.
+    // If a hostile piece occupies an eligible position, the Bishop may capture it, but not move past it.
+    std::array<bool, 64> possibleMoves = {0};
+    size_t currentIndex = convertChessCoordinateToIndex(x, y);
+    uint8_t sourceFlag = board[currentIndex];
+
+    auto spotIsNotOccupied = [this, sourceFlag, board, &possibleMoves](uint8_t x, uint8_t y)
+    {
+        size_t targetIndex = convertChessCoordinateToIndex(x, y);
+
+        if(spotIsEligible(sourceFlag, board[targetIndex]))
+        {
+            possibleMoves[targetIndex] = true;
+        }
+        else
+        {
+            // The bishop may not move past friendly pieces.
+            return false;
+        }
+
+        if(board[targetIndex] != 0)
+        {
+            // Since the spot is elligible, but not empty, it must be occupied by an enemy piece.
+            // The bishop may capture this piece, but may not move past it.
+            return false;
+        }
+
+        return true;
+    };
+
+    // Up right
+    for(uint8_t count = 1; x + count <= 'H' && y + count <= 8; count++)
+    {
+        if(!spotIsNotOccupied(x + count, y + count))
+        {
+            break;
+        }
+    }
+
+    // Up left
+    for(uint8_t count = 1; x - count >= 'A' && y + count <= 8; count++)
+    {
+        if(!spotIsNotOccupied(x - count, y + count))
+        {
+            break;
+        }
+    }
+
+    // Down right
+    for(uint8_t count = 1; x + count <= 'H' && y - count > 0; count++)
+    {
+        if(!spotIsNotOccupied(x + count, y - count))
+        {
+            break;
+        }
+    }
+
+    // Down left
+    for(uint8_t count = 1; x - count >= 'A' && y - count > 0; count++)
+    {
+        if(!spotIsNotOccupied(x - count, y - count))
         {
             break;
         }

@@ -22,6 +22,7 @@ private:
     std::array<bool, 64> getSpecificPiecePossibleMoves(const std::array<uint8_t, 64>& board, ChessPieceType pieceType, uint8_t x, uint8_t y) const;
     std::array<bool, 64> getPossibleKingMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const;
     std::array<bool, 64> getPossibleRookMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const;
+    std::array<bool, 64> getPossibleBishopMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const;
 
 private:
     std::array<uint8_t, 64> m_boardData;

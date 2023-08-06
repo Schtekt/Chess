@@ -55,6 +55,32 @@ TEST(CHESSBOARD, RookMayNotOpenForCheck)
     ASSERT_TRUE(board.MakeMove('A', 2, 'A', 3));
 }
 
+TEST(CHESSBOARD, MoveBishop)
+{
+    ChessBoard board(true);
+    board.AddPiece('D', 5, ChessPieceColor::WHITE | ChessPieceType::BISHOP);
+    ASSERT_EQ(board.GetNrOfPossibleMoves('D', 5), 13);
+}
+
+TEST(CHESSBOARD, MoveBishopIllegal)
+{
+    ChessBoard board(false);
+    board.AddPiece('A', 1, ChessPieceColor::BLACK | ChessPieceType::BISHOP);
+
+    ASSERT_FALSE(board.MakeMove('A', 1, 'A', 2));
+}
+
+TEST(CHESSBOARD, BishopMayNotOpenForCheck)
+{
+    ChessBoard board(false);
+    board.AddPiece('B', 1, ChessPieceColor::BLACK | ChessPieceType::KING);
+    board.AddPiece('C', 2, ChessPieceColor::BLACK | ChessPieceType::BISHOP);
+    board.AddPiece('E', 4, ChessPieceColor::WHITE | ChessPieceType::BISHOP);
+
+    ASSERT_FALSE(board.MakeMove('C', 2, 'B', 3));
+    ASSERT_TRUE(board.MakeMove('C', 2, 'D', 3));
+}
+
 TEST(CHESSBOARD, TurnChange)
 {
     ChessBoard board(false);
