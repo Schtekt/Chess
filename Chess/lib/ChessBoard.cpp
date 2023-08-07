@@ -159,6 +159,11 @@ std::tuple<uint8_t, uint8_t> ChessBoard::convertIndexToChessCoordinate(size_t in
     return std::make_tuple<uint8_t, uint8_t>(static_cast<uint8_t>(index % 8 + 'A'), static_cast<uint8_t>(index / 8 + 1));
 }
 
+bool ChessBoard::coordinatesWithinBoard(uint8_t x, uint8_t y) const
+{
+    return x <= 'H' && x >= 'A' && y >= 1 && y <= 8;
+}
+
 bool ChessBoard::spotIsEligible(uint8_t sourceFlag, uint8_t targetFlag) const
 {
     return targetFlag == ChessPieceType::NONE || 
@@ -228,6 +233,9 @@ std::array<bool, 64> ChessBoard::getSpecificPiecePossibleMoves(const std::array<
         break;
     case ChessPieceType::BISHOP:
         possibleMoves = getPossibleBishopMoves(board, x, y);
+        break;
+    case ChessPieceType::KNIGHT:
+        possibleMoves = getPossibleKnightMoves(board, x, y);
         break;
     default:
         // do nothing
@@ -461,5 +469,41 @@ std::array<bool, 64> ChessBoard::getPossibleBishopMoves(const std::array<uint8_t
         }
     }
 
+    return possibleMoves;
+}
+
+std::array<bool, 64> ChessBoard::getPossibleKnightMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const
+{
+    // Knight is allowed to move in a 'L' pattern, that is the knight may move two steps in a direction that is horisontal or vertical
+    // and then move one more step in a 90 degree angle (e.g. the knoght may move in a horisontal direction for the first two steps
+    // but must then move oine step vertically).
+    // If a friendly piece occupies an eligible position, the Knight may not move there.
+    // If a hostile piece occupies an eligible position, the Knight may capture it.
+    // To clarify, the knight is not stopped by any pieces that may block the path to a position.
+    std::array<bool, 64> possibleMoves = {0};
+    size_t currentIndex = convertChessCoordinateToIndex(x, y);
+
+    std::array<std::tuple<uint8_t, uint8_t>, 8> possibleKnightMoves;
+
+    possibleKnightMoves[0] = std::make_tuple<uint8_t, uint8_t>(x+1, y+2);
+    possibleKnightMoves[1] = std::make_tuple<uint8_t, uint8_t>(x-1, y+2);
+    possibleKnightMoves[2] = std::make_tuple<uint8_t, uint8_t>(x+1, y-2);
+    possibleKnightMoves[3] = std::make_tuple<uint8_t, uint8_t>(x-1, y-2);
+    possibleKnightMoves[4] = std::make_tuple<uint8_t, uint8_t>(x+2, y+1);
+    possibleKnightMoves[5] = std::make_tuple<uint8_t, uint8_t>(x+2, y-1);
+    possibleKnightMoves[6] = std::make_tuple<uint8_t, uint8_t>(x-2, y+1);
+    possibleKnightMoves[7] = std::make_tuple<uint8_t, uint8_t>(x-2, y-1);
+
+    for(auto move : possibleKnightMoves)
+    {
+        uint8_t possibleX = std::get<0>(move);
+        uint8_t possibleY = std::get<1>(move);
+        if(coordinatesWithinBoard(possibleX, possibleY))
+        {
+            size_t targetIndex = convertChessCoordinateToIndex(possibleX, possibleY);
+            possibleMoves[targetIndex] = spotIsEligible(board[currentIndex], board[targetIndex]);
+        }
+    }
+    
     return possibleMoves;
 }

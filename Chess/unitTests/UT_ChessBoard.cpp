@@ -81,6 +81,32 @@ TEST(CHESSBOARD, BishopMayNotOpenForCheck)
     ASSERT_TRUE(board.MakeMove('C', 2, 'D', 3));
 }
 
+TEST(CHESSBOARD, MoveKnight)
+{
+    ChessBoard board(true);
+    board.AddPiece('D', 5, ChessPieceColor::WHITE | ChessPieceType::KNIGHT);
+    ASSERT_EQ(board.GetNrOfPossibleMoves('D', 5), 8);
+}
+
+TEST(CHESSBOARD, MoveKnightIllegal)
+{
+    ChessBoard board(false);
+    board.AddPiece('A', 1, ChessPieceColor::BLACK | ChessPieceType::KNIGHT);
+
+    ASSERT_FALSE(board.MakeMove('A', 1, 'B', 1));
+}
+
+TEST(CHESSBOARD, KnightMustCaptureIfKingInCheck)
+{
+    ChessBoard board(false);
+    board.AddPiece('A', 1, ChessPieceColor::BLACK | ChessPieceType::KING);
+    board.AddPiece('B', 1, ChessPieceColor::BLACK | ChessPieceType::KNIGHT);
+    board.AddPiece('A', 3, ChessPieceColor::WHITE | ChessPieceType::ROOK);
+
+    ASSERT_FALSE(board.MakeMove('B', 1, 'C', 3));
+    ASSERT_TRUE(board.MakeMove('B', 1, 'A', 3));
+}
+
 TEST(CHESSBOARD, TurnChange)
 {
     ChessBoard board(false);
