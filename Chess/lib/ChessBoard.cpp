@@ -251,6 +251,9 @@ std::array<bool, 64> ChessBoard::getSpecificPiecePossibleMoves(const std::array<
     case ChessPieceType::PAWN:
         possibleMoves = getPossiblePawnMoves(board, x, y);
         break;
+    case ChessPieceType::QUEEN:
+        possibleMoves = getPossibleQueenMoves(board, x, y);
+        break;
     default:
         // do nothing
         break;
@@ -611,6 +614,21 @@ std::array<bool, 64> ChessBoard::getPossiblePawnMoves(const std::array<uint8_t, 
     {
         pawnMayEnPassant(x - 1, y, m_vecHistory.back());
         pawnMayEnPassant(x + 1, y, m_vecHistory.back());
+    }
+
+    return possibleMoves;
+}
+
+std::array<bool, 64> ChessBoard::getPossibleQueenMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const
+{
+    // Queen may move as a Bishop and/or a Rook does.
+    std::array<bool, 64> possibleMoves;
+    std::array<bool, 64> rookMoves = getPossibleRookMoves(board, x, y);
+    std::array<bool, 64> bishopMoves = getPossibleBishopMoves(board, x, y);
+
+    for(size_t i = 0; i < possibleMoves.size(); i++)
+    {
+        possibleMoves[i] = rookMoves[i] || bishopMoves[i];
     }
 
     return possibleMoves;

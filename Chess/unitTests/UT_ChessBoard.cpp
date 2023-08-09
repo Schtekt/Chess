@@ -176,6 +176,32 @@ TEST(CHESSBOARD, EnPassant)
     ASSERT_FALSE(board.MakeMove('B', 5, 'B', 4));
 }
 
+TEST(CHESSBOARD, MoveQueen)
+{
+    ChessBoard board(true);
+    board.AddPiece('D', 5, ChessPieceColor::WHITE | ChessPieceType::QUEEN);
+    ASSERT_EQ(board.GetNrOfPossibleMoves('D', 5), 27);
+}
+
+TEST(CHESSBOARD, MoveQueenIllegal)
+{
+    ChessBoard board(false);
+    board.AddPiece('A', 1, ChessPieceColor::BLACK | ChessPieceType::QUEEN);
+
+    ASSERT_FALSE(board.MakeMove('A', 1, 'C', 2));
+}
+
+TEST(CHESSBOARD, QueenMayNotOpenForCheck)
+{
+    ChessBoard board(false);
+    board.AddPiece('B', 1, ChessPieceColor::BLACK | ChessPieceType::KING);
+    board.AddPiece('C', 2, ChessPieceColor::BLACK | ChessPieceType::QUEEN);
+    board.AddPiece('E', 4, ChessPieceColor::WHITE | ChessPieceType::BISHOP);
+
+    ASSERT_FALSE(board.MakeMove('C', 2, 'B', 3));
+    ASSERT_TRUE(board.MakeMove('C', 2, 'D', 3));
+}
+
 TEST(CHESSBOARD, TurnChange)
 {
     ChessBoard board(false);

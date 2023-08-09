@@ -27,6 +27,7 @@ private:
     std::array<bool, 64> getPossibleBishopMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const;
     std::array<bool, 64> getPossibleKnightMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const;
     std::array<bool, 64> getPossiblePawnMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const;
+    std::array<bool, 64> getPossibleQueenMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const;
 
 private:
     std::array<uint8_t, 64> m_boardData;
