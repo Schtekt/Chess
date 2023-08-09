@@ -72,22 +72,33 @@ std::array<bool, 64> ChessBoard::getPossibleMoves(const std::array<uint8_t, 64>&
     return possibleMoves;
 }
 
-bool ChessBoard::MakeMove(uint8_t x_start, uint8_t y_start, uint8_t x_end, uint8_t y_end)
+bool ChessBoard::MakeMove(uint8_t xStart, uint8_t yStart, uint8_t xEnd, uint8_t yEnd)
 {
-    if((m_boardData[convertChessCoordinateToIndex(x_start, y_start)] & ChessPieceColor::BLACK) == m_whiteTurn * 8)
+    ChessPiece piece(m_boardData[convertChessCoordinateToIndex(xStart, yStart)]);
+    if(piece.GetColor() == m_whiteTurn * ChessPieceColor::BLACK)
     {
         return false;
     }
 
-    auto possibleMoves = GetPossibleMoves(x_start, y_start);
+    auto possibleMoves = GetPossibleMoves(xStart, yStart);
 
-    size_t startCoordinate = x_start - 'A' + 8 * (y_start - 1);
-    size_t endCoordinate = x_end - 'A' + 8 * (y_end - 1);
-    if(possibleMoves[endCoordinate])
+    size_t startIndex = xStart - 'A' + 8 * (yStart - 1);
+    size_t endIndex = xEnd - 'A' + 8 * (yEnd - 1);
+    if(possibleMoves[endIndex])
     {
-        m_boardData[endCoordinate] = m_boardData[startCoordinate];
-        m_boardData[startCoordinate] = 0;
+        // Special case for en passant capture.
+        if(piece.GetType() == ChessPieceType::PAWN && xStart != xEnd && m_boardData[endIndex] == 0)
+        {
+            size_t enPassantCaptureIndex = convertChessCoordinateToIndex(xEnd, yStart);
+            m_boardData[enPassantCaptureIndex] = 0;
+        }
+
+        m_boardData[endIndex] = m_boardData[startIndex];
+        m_boardData[startIndex] = 0;
+
+
         m_whiteTurn = !m_whiteTurn;
+        m_vecHistory.emplace_back(xStart, yStart, xEnd, yEnd);
         return true;
     }
     else 
@@ -236,6 +247,9 @@ std::array<bool, 64> ChessBoard::getSpecificPiecePossibleMoves(const std::array<
         break;
     case ChessPieceType::KNIGHT:
         possibleMoves = getPossibleKnightMoves(board, x, y);
+        break;
+    case ChessPieceType::PAWN:
+        possibleMoves = getPossiblePawnMoves(board, x, y);
         break;
     default:
         // do nothing
@@ -505,5 +519,99 @@ std::array<bool, 64> ChessBoard::getPossibleKnightMoves(const std::array<uint8_t
         }
     }
     
+    return possibleMoves;
+}
+
+std::array<bool, 64> ChessBoard::getPossiblePawnMoves(const std::array<uint8_t, 64>& board, uint8_t x, uint8_t y) const
+{
+    // Pawn is only allowed to move "forward" (upwards for white and downwards for black), one step at a time.
+    // If a friendly or hostile piece blocks the spot in front of the pawn, it may not move there.
+    // If a hostile piece is placed one step diagonally in front of the pawn, it may capture that piece. 
+    // For example, if a white pawn exist on D5, it could potentially capture a piece on C6 or E6).
+    
+    // Special rules!
+    // If a pawn is making its first move, and only then, it may move up to two steps instead of only one in the forward direction, 
+    // however, none of the two spots may be occupied in that case.
+    // If a pawn reaches the end of the board, it is promoted into any one of the other chess piece types, except for the king piece.
+    // If a pawn uses its first move to advance two steps and lands adjacent to a hostile pawn, then the hostile pawn may capture the 
+    // pawn that just made the two step advance (en passant). This may only be done on the turn immediatly after the two step advance.
+
+    std::array<bool, 64> possibleMoves = {0};
+    size_t currentIndex = convertChessCoordinateToIndex(x, y);
+    ChessPiece pawnPiece(board[currentIndex]);
+    bool isBlack = pawnPiece.GetColor() == ChessPieceColor::BLACK;
+    int8_t forwardDir = 1 - 2 * isBlack;
+
+    if(!coordinatesWithinBoard(x,y+forwardDir))
+    {
+        // Something has gone wrong...
+        return possibleMoves;
+    }
+
+    size_t targetIndex = convertChessCoordinateToIndex(x, y+forwardDir);
+    bool pawnMayMoveForward = spotIsEligible(board[currentIndex], board[targetIndex]);
+
+    possibleMoves[targetIndex] = pawnMayMoveForward;
+
+    // Check possible captures
+    auto pawnMayCapture = [this, currentIndex, board, &possibleMoves](uint8_t x, uint8_t y)
+    {
+        if(coordinatesWithinBoard(x, y))
+        {
+            size_t captureIndex = convertChessCoordinateToIndex(x, y);
+            bool notOccupiedByFriendly = spotIsEligible(board[currentIndex], board[captureIndex]);
+            possibleMoves[captureIndex] = notOccupiedByFriendly && board[captureIndex] != ChessPieceType::NONE;
+        }
+    };
+
+    pawnMayCapture(x-1, y+forwardDir);
+    pawnMayCapture(x+1, y+forwardDir);
+
+    // Special case, double step
+    uint8_t doubleStepOrigin = 2 + 5 * isBlack;
+    bool pieceOnCorrectPosition = y == doubleStepOrigin;
+
+    if(pawnMayMoveForward && pieceOnCorrectPosition)
+    {
+        // Double step is allowed
+        uint8_t yDoubleStep = y + 2 * forwardDir;
+
+        targetIndex = convertChessCoordinateToIndex(x, yDoubleStep);
+        possibleMoves[targetIndex] = board[targetIndex] == ChessPieceType::NONE;
+    }
+
+    // Special case, en passant
+    auto pawnMayEnPassant = [this, pawnPiece, board, forwardDir, &possibleMoves](uint8_t x, uint8_t y, const std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>& lastMove)
+    {
+        if(coordinatesWithinBoard(x, y))
+        {
+            size_t hostilePieceIndex = convertChessCoordinateToIndex(x, y);
+            ChessPiece hostilePiece(board[hostilePieceIndex]);
+
+            if(hostilePiece.GetType() == ChessPieceType::PAWN && 
+               hostilePiece.GetColor() != pawnPiece.GetColor())
+            {
+                // Check if hostile piece made the latest move and if that move was a double step
+                uint8_t xStart = std::get<0>(lastMove);
+                uint8_t yStart = std::get<1>(lastMove);
+                uint8_t xEnd = std::get<2>(lastMove);
+                uint8_t yEnd = std::get<3>(lastMove);
+
+                if(xEnd == x && yEnd == y && xEnd == xStart && yStart == yEnd + forwardDir * 2)
+                {
+                    // As a pawn may not perform the double step, in case there is a piece blocking, assume that there is no piece blocking.
+                    possibleMoves[convertChessCoordinateToIndex(x, y + forwardDir)] = true;
+                }
+            }
+        }
+    };
+
+    // If there is no history, it is not possible to perform en passant.
+    if(m_vecHistory.size() != 0)
+    {
+        pawnMayEnPassant(x - 1, y, m_vecHistory.back());
+        pawnMayEnPassant(x + 1, y, m_vecHistory.back());
+    }
+
     return possibleMoves;
 }

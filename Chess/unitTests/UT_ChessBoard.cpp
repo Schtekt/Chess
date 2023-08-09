@@ -107,6 +107,75 @@ TEST(CHESSBOARD, KnightMustCaptureIfKingInCheck)
     ASSERT_TRUE(board.MakeMove('B', 1, 'A', 3));
 }
 
+TEST(CHESSBOARD, MovePawn)
+{
+    ChessBoard board(true);
+    board.AddPiece('A', 5, ChessPieceColor::WHITE | ChessPieceType::PAWN);
+    ASSERT_EQ(board.GetNrOfPossibleMoves('A', 5), 1);
+}
+
+TEST(CHESSBOARD, MovePawnIllegal)
+{
+    ChessBoard board(true);
+    board.AddPiece('A', 2, ChessPieceColor::WHITE | ChessPieceType::PAWN);
+
+    ASSERT_FALSE(board.MakeMove('A', 2, 'B', 2));
+}
+
+TEST(CHESSBOARD, PawnMayNotOpenForCheck)
+{
+    ChessBoard board(true);
+    board.AddPiece('A', 2, ChessPieceColor::WHITE | ChessPieceType::KING);
+    board.AddPiece('B', 2, ChessPieceColor::WHITE | ChessPieceType::PAWN);
+    board.AddPiece('C', 2, ChessPieceColor::BLACK | ChessPieceType::ROOK);
+
+    ASSERT_FALSE(board.MakeMove('B', 2, 'B', 3));
+}
+
+TEST(CHESSBOARD, CaptureWithPawn)
+{
+    ChessBoard board(true);
+    board.AddPiece('A', 3, ChessPieceColor::BLACK | ChessPieceType::PAWN);
+    board.AddPiece('B', 2, ChessPieceColor::WHITE | ChessPieceType::PAWN);
+
+    ASSERT_EQ(3, board.GetNrOfPossibleMoves('B', 2));
+    ASSERT_TRUE(board.MakeMove('B', 2, 'A', 3));
+}
+
+TEST(CHESSBOARD, PawnDoubleStep)
+{
+    ChessBoard board(true);
+    board.AddPiece('A', 2, ChessPieceColor::WHITE | ChessPieceType::PAWN);
+    board.AddPiece('B', 7, ChessPieceColor::BLACK | ChessPieceType::PAWN);
+    board.AddPiece('C', 6, ChessPieceColor::BLACK | ChessPieceType::PAWN);
+
+    ASSERT_TRUE(board.MakeMove('A', 2, 'A', 4));
+    ASSERT_TRUE(board.MakeMove('B', 7, 'B', 5));
+    ASSERT_TRUE(board.MakeMove('A', 4, 'A', 5));
+    ASSERT_FALSE(board.MakeMove('B', 5, 'B', 3));
+    ASSERT_FALSE(board.MakeMove('C', 6, 'C', 4));
+    ASSERT_TRUE(board.MakeMove('B', 5, 'B', 4));
+}
+
+TEST(CHESSBOARD, EnPassant)
+{
+    ChessBoard board(false);
+    board.AddPiece('B', 7, ChessPieceColor::BLACK | ChessPieceType::PAWN);
+    board.AddPiece('C', 5, ChessPieceColor::WHITE | ChessPieceType::PAWN);
+    board.AddPiece('A', 4, ChessPieceColor::WHITE | ChessPieceType::PAWN);
+    board.AddPiece('D', 7, ChessPieceColor::BLACK | ChessPieceType::PAWN);
+
+    ASSERT_TRUE(board.MakeMove('D', 7, 'D', 5));
+    ASSERT_EQ(2, board.GetNrOfPossibleMoves('C', 5));
+    ASSERT_TRUE(board.MakeMove('A', 4, 'A', 5));
+    ASSERT_TRUE(board.MakeMove('B', 7, 'B', 5));
+    ASSERT_EQ(2, board.GetNrOfPossibleMoves('C', 5));
+    ASSERT_EQ(2, board.GetNrOfPossibleMoves('A', 5));
+    ASSERT_FALSE(board.MakeMove('C', 5, 'D', 6));
+    ASSERT_TRUE(board.MakeMove('C', 5, 'B', 6));
+    ASSERT_FALSE(board.MakeMove('B', 5, 'B', 4));
+}
+
 TEST(CHESSBOARD, TurnChange)
 {
     ChessBoard board(false);
